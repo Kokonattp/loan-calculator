@@ -17,13 +17,25 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: 'Prompt', sans-serif;
   background: var(--bg);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Safe area for mobile */
+.safe-area-bottom {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 /* Scrollbar */
@@ -100,7 +112,7 @@ body {
   border-radius: 10px;
   border: 2px solid #E0E7EB;
   background: #F8FAFB;
-  font-size: 14px;
+  font-size: 16px; /* Prevent zoom on iOS */
   font-family: 'Prompt', sans-serif;
   transition: all 0.2s ease;
   outline: none;
@@ -194,4 +206,28 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile specific */
+@media (max-width: 768px) {
+  .input-field {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+  
+  .chip {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Touch device optimization */
+@media (hover: none) and (pointer: coarse) {
+  .chip:hover {
+    border-color: #E0E7EB;
+  }
+  
+  .chip.active:hover {
+    border-color: var(--teal);
+  }
 }

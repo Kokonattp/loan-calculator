@@ -1,6 +1,6 @@
 'use client';
 
-import UserMenu from './UserMenu';
+import { useState } from 'react';
 
 function formatNumber(num) {
   if (!num || isNaN(num)) return '0.00';
@@ -22,7 +22,10 @@ function getLongestEndDate(months) {
   return `${thaiMonths[endDate.getMonth()]} ${endDate.getFullYear() + 543}`;
 }
 
-export default function SummaryBar({ items, onLoginClick, syncStatus }) {
+export default function SummaryBar({ items, onClearAll }) {
+  const [showDetails, setShowDetails] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  
   const activeItems = Object.values(items).filter(item => item?.monthlyPayment > 0);
   
   const totals = activeItems.reduce((acc, item) => ({
@@ -42,56 +45,36 @@ export default function SummaryBar({ items, onLoginClick, syncStatus }) {
 
   const longestMonths = longestItem?.months || 0;
   const longestEndDate = getLongestEndDate(longestMonths);
-  const longestName = longestItem?.name || '-';
 
   return (
     <div className="bg-navy text-white">
-      <div className="max-w-[1800px] mx-auto px-4 py-3">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="max-w-[1800px] mx-auto px-3 md:px-4 py-2 md:py-3">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal flex items-center justify-center">
-              <span className="text-xl">💰</span>
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-teal flex items-center justify-center">
+              <span className="text-base md:text-xl">💰</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-lg">Loan Calculator Pro</h1>
-                {/* Sync Status */}
-                {syncStatus === 'saving' && (
-                  <span className="px-2 py-0.5 bg-yellow/20 rounded text-xs text-yellow animate-pulse">
-                    ⏳ กำลังบันทึก...
-                  </span>
-                )}
-                {syncStatus === 'saved' && (
-                  <span className="px-2 py-0.5 bg-mint/20 rounded text-xs text-mint">
-                    ✅ บันทึกแล้ว
-                  </span>
-                )}
-                {syncStatus === 'error' && (
-                  <span className="px-2 py-0.5 bg-red/20 rounded text-xs text-red">
-                    ❌ บันทึกไม่สำเร็จ
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-white/60">{activeItems.length} รายการ</p>
+            <div className="hidden sm:block">
+              <h1 className="font-bold text-sm md:text-lg">Loan Calculator</h1>
+              <p className="text-[10px] md:text-xs text-white/60">{activeItems.length} รายการ</p>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 md:gap-6">
+          {/* Stats - Desktop */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             {/* Total Monthly */}
             <div className="text-center">
               <p className="text-xs text-white/60 mb-0.5">ผ่อนรวม/เดือน</p>
-              <p className="text-xl md:text-2xl font-bold text-yellow animate-count">
+              <p className="text-xl lg:text-2xl font-bold text-yellow">
                 ฿{formatNumber(totals.monthlyPayment)}
               </p>
             </div>
 
-            {/* Divider */}
-            <div className="w-px h-10 bg-white/20 hidden sm:block" />
+            <div className="w-px h-10 bg-white/20" />
 
             {/* Principal */}
-            <div className="text-center hidden md:block">
+            <div className="text-center">
               <p className="text-xs text-white/60 mb-0.5">เงินต้นรวม</p>
               <p className="text-lg font-semibold text-mint">
                 ฿{formatCompact(totals.principal)}
@@ -99,82 +82,117 @@ export default function SummaryBar({ items, onLoginClick, syncStatus }) {
             </div>
 
             {/* Interest */}
-            <div className="text-center hidden sm:block">
+            <div className="text-center">
               <p className="text-xs text-white/60 mb-0.5">ดอกเบี้ยรวม</p>
               <p className="text-lg font-semibold text-orange">
                 ฿{formatCompact(totals.totalInterest)}
               </p>
             </div>
 
-            {/* Divider */}
-            <div className="w-px h-10 bg-white/20 hidden lg:block" />
-
             {/* Longest End Date */}
             {longestMonths > 0 && (
-              <div className="text-center hidden lg:block">
-                <p className="text-xs text-white/60 mb-0.5">📅 หมดหนี้ทั้งหมด</p>
-                <p className="text-lg font-semibold text-mint">
-                  {longestEndDate}
-                </p>
-                <p className="text-[10px] text-white/40 truncate max-w-[100px]">
-                  ({longestName})
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Right Side - User Menu & Details */}
-          <div className="flex items-center gap-3">
-            {/* Items List - Dropdown */}
-            {activeItems.length > 0 && (
-              <details className="relative group">
-                <summary className="cursor-pointer list-none flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-                  <span className="text-sm">รายละเอียด</span>
-                  <svg className="w-4 h-4 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-card-xl p-4 z-50 max-h-96 overflow-y-auto">
-                  <h4 className="font-semibold text-navy text-sm mb-3">📋 รายการทั้งหมด</h4>
-                  <div className="space-y-2">
-                    {activeItems.map((item, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-navy truncate max-w-[140px]">
-                            {item.name || `รายการ ${idx + 1}`}
-                          </span>
-                          <span className="text-sm font-bold text-teal">
-                            ฿{formatNumber(item.monthlyPayment)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{item.months} งวด</span>
-                          <span>หมด {item.endDate || '-'}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Summary Footer */}
-                  <div className="mt-4 pt-4 border-t-2 border-gray-200">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-navy">รวมผ่อน/เดือน</span>
-                      <span className="font-bold text-lg text-teal">฿{formatNumber(totals.monthlyPayment)}</span>
-                    </div>
-                    {longestMonths > 0 && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">📅 หมดหนี้ทั้งหมด</span>
-                        <span className="font-semibold text-navy">{longestEndDate}</span>
-                      </div>
-                    )}
-                  </div>
+              <>
+                <div className="w-px h-10 bg-white/20 hidden lg:block" />
+                <div className="text-center hidden lg:block">
+                  <p className="text-xs text-white/60 mb-0.5">📅 หมดหนี้ทั้งหมด</p>
+                  <p className="text-lg font-semibold text-mint">
+                    {longestEndDate}
+                  </p>
                 </div>
-              </details>
+              </>
             )}
-
-            {/* User Menu */}
-            <UserMenu onLoginClick={onLoginClick} />
           </div>
+
+          {/* Mobile Stats Summary */}
+          <div className="flex md:hidden items-center gap-3">
+            <div className="text-center">
+              <p className="text-[9px] text-white/60">ผ่อน/เดือน</p>
+              <p className="text-sm font-bold text-yellow">
+                ฿{formatCompact(totals.monthlyPayment)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[9px] text-white/60">ดอกเบี้ย</p>
+              <p className="text-sm font-semibold text-orange">
+                ฿{formatCompact(totals.totalInterest)}
+              </p>
+            </div>
+          </div>
+
+          {/* Details Button */}
+          {activeItems.length > 0 && (
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-xs md:text-sm"
+              >
+                <span className="hidden sm:inline">รายละเอียด</span>
+                <span className="sm:hidden">{activeItems.length}</span>
+                <svg className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {showDetails && (
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowDetails(false)}
+                  />
+                  
+                  {/* Dropdown */}
+                  <div className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-white rounded-xl shadow-card-xl p-4 z-50 max-h-[70vh] overflow-y-auto">
+                    <h4 className="font-semibold text-navy text-sm mb-3">📋 รายการทั้งหมด</h4>
+                    <div className="space-y-2">
+                      {activeItems.map((item, idx) => (
+                        <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-navy truncate max-w-[140px]">
+                              {item.name || `รายการ ${idx + 1}`}
+                            </span>
+                            <span className="text-sm font-bold text-teal">
+                              ฿{formatNumber(item.monthlyPayment)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>{item.months} งวด</span>
+                            <span>หมด {item.endDate || '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Summary Footer */}
+                    <div className="mt-4 pt-4 border-t-2 border-gray-200">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-navy">รวมผ่อน/เดือน</span>
+                        <span className="font-bold text-lg text-teal">฿{formatNumber(totals.monthlyPayment)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-gray-600">ดอกเบี้ยรวม</span>
+                        <span className="font-semibold text-orange">฿{formatNumber(totals.totalInterest)}</span>
+                      </div>
+                      {longestMonths > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">📅 หมดหนี้ทั้งหมด</span>
+                          <span className="font-semibold text-navy">{longestEndDate}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Clear Button */}
+                    <button
+                      onClick={() => { setShowDetails(false); onClearAll?.(); }}
+                      className="w-full mt-4 py-2 rounded-lg border border-red/30 text-red text-sm hover:bg-red/5 transition-colors"
+                    >
+                      🗑️ ลบข้อมูลทั้งหมด
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

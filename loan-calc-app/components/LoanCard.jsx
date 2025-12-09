@@ -15,29 +15,27 @@ function getEndDate(months) {
 }
 
 export default function LoanCard({ 
-  id, 
-  itemName: initialName = '',
+  cardData,
   onRemove, 
-  onUpdate,
+  onFieldChange,
+  onCalcUpdate,
   accentColor = '#079FA0',
 }) {
-  const [itemName, setItemName] = useState(initialName);
-  const [principal, setPrincipal] = useState('');
-  const [interestRate, setInterestRate] = useState('15');
-  const [months, setMonths] = useState('12');
-  const [minPayment, setMinPayment] = useState('');
-  const [isReducing, setIsReducing] = useState(true);
-  const [calcMode, setCalcMode] = useState('months');
+  const { id, name = '', principal = '', rate = '15', months = '12', minPay = '', isReducing = true, mode = 'months' } = cardData;
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const updateField = (field, value) => {
+    onFieldChange?.(id, field, value);
+  };
 
   const calculation = useMemo(() => {
     const P = parseFloat(principal) || 0;
-    const annualRate = (parseFloat(interestRate) || 0) / 100;
+    const annualRate = (parseFloat(rate) || 0) / 100;
     const monthlyRate = annualRate / 12;
 
     if (P <= 0) return null;
 
-    if (calcMode === 'months') {
+    if (mode === 'months') {
       const n = parseInt(months) || 1;
       if (isReducing) {
         if (monthlyRate === 0) {
@@ -50,7 +48,7 @@ export default function LoanCard({
         return { monthlyPayment: (P + totalInterest) / n, totalInterest, totalPayment: P + totalInterest, months: n, endDate: getEndDate(n) };
       }
     } else {
-      const payment = parseFloat(minPayment) || 0;
+      const payment = parseFloat(minPay) || 0;
       if (payment <= 0) return null;
       
       if (isReducing && monthlyRate > 0) {
@@ -82,19 +80,19 @@ export default function LoanCard({
         return { monthlyPayment: payment, totalInterest, totalPayment: P + totalInterest, months: n, endDate: getEndDate(n) };
       }
     }
-  }, [principal, interestRate, months, minPayment, isReducing, calcMode]);
+  }, [principal, rate, months, minPay, isReducing, mode]);
 
   useEffect(() => {
     if (calculation && !calculation.error) {
-      onUpdate?.(id, { 
+      onCalcUpdate?.(id, { 
         ...calculation, 
-        name: itemName || 'รายการใหม่',
+        name: name || 'รายการใหม่',
         principal: parseFloat(principal) || 0,
       });
     } else {
-      onUpdate?.(id, { monthlyPayment: 0, totalInterest: 0, totalPayment: 0, months: 0, name: itemName, principal: 0, endDate: null });
+      onCalcUpdate?.(id, { monthlyPayment: 0, totalInterest: 0, totalPayment: 0, months: 0, name, principal: 0, endDate: null });
     }
-  }, [calculation, id, onUpdate, itemName, principal]);
+  }, [calculation, id, name, principal]);
 
   return (
     <div className="bg-white rounded-2xl animate-slide-in overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-colors" style={{ boxShadow: '0 4px 12px rgba(2, 56, 82, 0.1)' }}>
@@ -107,8 +105,8 @@ export default function LoanCard({
         <div className="flex-1 min-w-0">
           <input
             type="text"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
+            value={name}
+            onChange={(e) => updateField('name', e.target.value)}
             onClick={(e) => e.stopPropagation()}
             placeholder="ชื่อรายการ..."
             className="w-full bg-transparent border-none outline-none font-medium text-navy text-sm placeholder:text-gray-400"
@@ -145,7 +143,7 @@ export default function LoanCard({
             <input
               type="number"
               value={principal}
-              onChange={(e) => setPrincipal(e.target.value)}
+              onChange={(e) => updateField('principal', e.target.value)}
               placeholder="0.00"
               className="input-field"
             />
@@ -156,8 +154,8 @@ export default function LoanCard({
             <label className="text-xs font-medium text-gray-500 mb-1 block">ดอกเบี้ย (% ต่อปี)</label>
             <input
               type="number"
-              value={interestRate}
-              onChange={(e) => setInterestRate(e.target.value)}
+              value={rate}
+              onChange={(e) => updateField('rate', e.target.value)}
               placeholder="15"
               step="0.01"
               className="input-field"
@@ -168,7 +166,7 @@ export default function LoanCard({
           <div className="flex items-center justify-between py-2">
             <span className="text-xs font-medium text-gray-600">ลดต้นลดดอก</span>
             <button
-              onClick={() => setIsReducing(!isReducing)}
+              onClick={() => updateField('isReducing', !isReducing)}
               className={`switch ${isReducing ? 'active' : ''}`}
             />
           </div>
@@ -176,34 +174,34 @@ export default function LoanCard({
           {/* Calc Mode */}
           <div className="flex gap-2">
             <button
-              onClick={() => setCalcMode('months')}
-              className={`chip flex-1 text-center ${calcMode === 'months' ? 'active' : ''}`}
+              onClick={() => updateField('mode', 'months')}
+              className={`chip flex-1 text-center ${mode === 'months' ? 'active' : ''}`}
             >
               กำหนดงวด
             </button>
             <button
-              onClick={() => setCalcMode('payment')}
-              className={`chip flex-1 text-center ${calcMode === 'payment' ? 'active' : ''}`}
+              onClick={() => updateField('mode', 'payment')}
+              className={`chip flex-1 text-center ${mode === 'payment' ? 'active' : ''}`}
             >
               กำหนดยอดผ่อน
             </button>
           </div>
 
           {/* Months or Payment */}
-          {calcMode === 'months' ? (
+          {mode === 'months' ? (
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">จำนวนงวด (เดือน)</label>
               <input
                 type="number"
                 value={months}
-                onChange={(e) => setMonths(e.target.value)}
+                onChange={(e) => updateField('months', e.target.value)}
                 className="input-field"
               />
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {[6, 12, 24, 36, 48, 60].map(m => (
                   <button
                     key={m}
-                    onClick={() => setMonths(m.toString())}
+                    onClick={() => updateField('months', m.toString())}
                     className={`chip ${parseInt(months) === m ? 'active' : ''}`}
                   >
                     {m >= 12 ? `${m/12}ปี` : `${m}ด.`}
@@ -216,8 +214,8 @@ export default function LoanCard({
               <label className="text-xs font-medium text-gray-500 mb-1 block">ยอดผ่อน/เดือน</label>
               <input
                 type="number"
-                value={minPayment}
-                onChange={(e) => setMinPayment(e.target.value)}
+                value={minPay}
+                onChange={(e) => updateField('minPay', e.target.value)}
                 placeholder="0.00"
                 className="input-field"
               />
@@ -234,9 +232,9 @@ export default function LoanCard({
               style={{ background: `${accentColor}08`, borderColor: `${accentColor}30` }}
             >
               <div className="text-center mb-2">
-                <p className="text-xs text-gray-500">{calcMode === 'months' ? 'ยอดผ่อน/เดือน' : 'ผ่อนอีก'}</p>
+                <p className="text-xs text-gray-500">{mode === 'months' ? 'ยอดผ่อน/เดือน' : 'ผ่อนอีก'}</p>
                 <p className="text-xl font-bold" style={{ color: accentColor }}>
-                  {calcMode === 'months' ? `฿${formatNumber(calculation.monthlyPayment)}` : `${calculation.months} เดือน`}
+                  {mode === 'months' ? `฿${formatNumber(calculation.monthlyPayment)}` : `${calculation.months} เดือน`}
                 </p>
               </div>
               
